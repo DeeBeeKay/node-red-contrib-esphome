@@ -14,10 +14,8 @@
 
 ## About
 
-### !!! Alpha, Alpha, Alpha release
-### !!! Need help writing documentation
+### !!! Alpha, Alpha, Alpha release. Very. And yes also very cool.
 
-Node-RED nodes to ESPhome devices
 
 ## Changelog
 
@@ -31,17 +29,74 @@ Node-RED nodes to ESPhome devices
 #### 0.2.1
   - support Status in node
 
+
+## What is node-red-contrib-esphome?
+
+This node provides a simple way to have API access to ESP-Home devices. This enables you to enjoy the rapid prototyping that ESP-Home provides without having to install HomeAssistant; most Node-Red users do their automation in Node-Red anyway.
+
+In addition to the normal basic functions you expect, the esphome-in node provides access to a host of unique information not otherwise easily exposed in HomeAssistant. This may provide exciting new triggers not previously envisioned, and/or awareness of previously unenvisioned dystopian horrors.
+
 ## Installation
+
+1. From Node-Red, click the hamburger menu in the top right, select and select Manage pallette, or press Alt-P. But like why would you let go of the mouse at that point? Surely you'd ohhhhhhhh right, assistive devices. I see you my cyborg people, what's up?
+
+2. The User Settings window will appear, with a list of your installed nodes. Select the Install tab. I couldn't figure it out how you'd access it from keyboard, but it's probably like, Tab a lot.
+
+3. In the search field, type "esphome". Something's bound to come up.
+
+4. Select node-red-contrib-esphome, and click Install. Confirm at the prompt; there's also an option that brings you here, and if that's how you arrived, howzit.
+
+5. That's it for installation. You're good to go.
+
+Mind you, assistive device users probably just use the commandline anyway. In which case:
 
 ```bash
 $ npm i node-red-contrib-esphome
 ```
 
-## Inputs
+This installs two nodes: esphome-in and esphome-out, which are pretty self explanatory. 
 
-Inputs are sent to the node as JSON payloads. The list below provides a list of keys and values (and their expected value type) that may be sent to the "esphome out" nodes. It is helpful to watch the "esphome in" messages to learn which type and range of commands are expected by your device.
 
-Some example message payloads are:
+### Configuration
+
+You will need to configure each of your esphome device once only; thereafter any esphome node you add can use it.
+
+Configuring a device requires you to know:
+
+ - the IP address of the device (hostname will not currently do, this is alpha software, chill out)
+ - the encryption key and password for accessing the device remotely
+ 
+You can get this data from the ESPHome Dashboard; encryption info from the YAML, IP from the log window.
+
+
+## To configure both esphome-in and esphome-out nodes:
+
+The Properties interface is identical for both nodes. A node can send commands (esphome-out) or receive status messages (esphome-in) for one Entity in a device only.
+
+For example, if a device has two relays that you want to switch, you will need to configure an esphome-out node for each relay. Likewise, to receive state change messages when a relay triggers, you'll need an esphome-in node for each relay too.
+
+1. Whether input or output, add an esphome node.
+
+2. Double click to open the Properties window, and name it.
+
+3. If this is the first time you are interacting with a particular device, you'll need configure it now. It'll be a list selection thereafter.
+
+4. Select Add New Device (the option will be at the bottom if you've already got a lot of devices).
+
+3. In the Properties window, give the device a usefully descriptive name. All esphome nodes will use this name, so this is when you get to rename the old ones that you regret. Mind you, "geysus" was still fun; kept that.
+
+4. Fill in the IP, and paste the encryption stuff; you copied it earlier from the ESPHome panel. You can leave this blank if you're dealing with an older device that doesn't use encryption. Then click Add.
+
+5. Back in the previous Properties window, you'll notice that the Entities dropdown doesn't work yet, so you can't select anything. This is because the node needs to be deployed once in order to get a list of available Entities from the device. So click Done, Deploy, come back, and select the entity you want to control.
+
+That's it. Use in your automations at will. 
+
+
+## Sending commands
+
+You need to format command payloads as JSON, which 99% of the time will simply be {"state":true} or {"state":false} if you're just turning stuff on and off. Refer below as needed.
+
+Some more specific examples are:
 
 ```js
 // to set a light on:
@@ -56,6 +111,43 @@ msg.payload = {'brightness': 42}
 // to press a button:
 msg.payload = true
 ```
+
+If you're having trouble getting a device to behave the way you expect, you are passing it the wrong kind of variable, or you've formatted it wrong. Trust me, it's you; I know because it was me.
+
+To fix this, add a debug node to an esphome-in node, and have a look at the payload. It's JSON, so the type will be defined. A list of variables and the expected type is below.
+
+## Receiving data
+
+An esphome-in node returns an object payload with a generous amount of useful data about a device whenever a state changes on it (sensor input, switch touched, light turned on, etc).
+
+Below is an example of the kind of payload esphome-out returns.
+
+Note that three objects are returned within the payload; one for the usual data you expect, and two others to do with the device itself and its capabilities. 
+
+You will obviously need to parse out the fields you want to use, but if it's inside esphome, it's available here. 
+
+```js
+{"payload":{"state":true,"brightness":1,"colorMode":1,"colorBrightness":1,"red":1,"green":1,"blue":1,"white":1,"colorTemperature":0,"coldWhite":1,"warmWhite":1,"effect":""},"device":{"usesPassword":false,"name":"MyDeviceName","macAddress":"XX:XX:XX:XX","esphomeVersion":"2023.3.2","compilationTime":"Apr 25 2023, 21:33:34","model":"esp8285","hasDeepSleep":false,"projectName":"","projectVersion":"","webserverPort":0,"legacyBluetoothProxyVersion":0,"bluetoothProxyFeatureFlags":0,"manufacturer":"Espressif","friendlyName":"","voiceAssistantVersion":WhyIsThisHere,"suggestedArea":""},"entity":{"key":394606768,"type":"Light","name":"Light - Library 2","config":{"objectId":"light_-_library_2","key":394606768,"name":"Light - Library 2","uniqueId":"son029_ifanlib2lightlight_-_library_2","supportedColorModesList":[1],"legacySupportsBrightness":false,"legacySupportsRgb":false,"legacySupportsWhiteValue":false,"legacySupportsColorTemperature":false,"minMireds":0,"maxMireds":0,"effectsList":[],"disabledByDefault":false,"icon":"","entityCategory":0}},"_msgid":"b65536dcd2f8a15a","_event":"node:6b3f6bc02f499ebe","topic":"/your/choice/of/topic"}
+```
+
+You can use this data in whatever creative ways occur to you. Please share when they do; it's how we grow as humans, after the relevant royalties and taxes have been deducted.
+
+
+## Known but non-breaking quirks (in 0.27):
+
+- The eshome-in node doesn't support topics yet, but this is easy to solve by adding a change node after it, and setting the topic there.
+
+- Random errors will output into the debug panel. It has zero effect on functionality, just don't freak out when you see it. 
+
+
+
+
+
+
+
+
+
+
 
 
 #### Button
